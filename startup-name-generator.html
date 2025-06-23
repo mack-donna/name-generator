@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startup Name Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .name-item {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #333;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .name-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Startup Name Generator</h1>
+        
+        <div class="input-group">
+            <label for="idea">Describe your product or idea:</label>
+            <input type="text" id="idea" placeholder="e.g., AI-powered fitness tracker">
+        </div>
+        
+        <button onclick="generateNames()">Generate Startup Names</button>
+        
+        <div class="loading" id="loading">Generating awesome names...</div>
+        
+        <div class="results" id="results">
+            <h2>Your Startup Names:</h2>
+            <div id="namesList"></div>
+            <button onclick="regenerateNames()" style="margin-top: 20px; background: #6c757d;">I don't love any of these — show me more</button>
+        </div>
+    </div>
+
+    <script>
+        // Curated word banks for creative name generation
+        const techWords = ['pixel', 'byte', 'sync', 'stream', 'forge', 'cipher', 'prism', 'matrix', 'vector', 'neural', 'quantum', 'circuit', 'pulse', 'beacon', 'signal'];
+        const natureWords = ['oak', 'pine', 'river', 'stone', 'wave', 'aurora', 'lunar', 'solar', 'ember', 'frost', 'bloom', 'sage', 'cedar', 'willow', 'dawn'];
+        const abstractWords = ['nexus', 'vertex', 'apex', 'flux', 'vibe', 'zen', 'nova', 'echo', 'aura', 'vista', 'nimbus', 'cosmos', 'atlas', 'zenith', 'sphere'];
+        const creativeWords = ['canvas', 'palette', 'sketch', 'craft', 'studio', 'atelier', 'forge', 'foundry', 'workshop', 'gallery', 'loom', 'kiln', 'anvil', 'easel', 'chisel'];
+        const actionWords = ['spark', 'ignite', 'launch', 'boost', 'elevate', 'amplify', 'propel', 'soar', 'glide', 'flow', 'surge', 'leap', 'shift', 'pivot', 'rise'];
+        const qualityWords = ['prime', 'pure', 'swift', 'clear', 'bright', 'keen', 'bold', 'vivid', 'crisp', 'sleek', 'fresh', 'true', 'core', 'wise', 'deep'];
+
+        // Phonetic components for creating unique sounds
+        const startSounds = ['str', 'fl', 'cr', 'br', 'tr', 'pr', 'dr', 'gr', 'bl', 'cl', 'gl', 'pl', 'sk', 'sp', 'sw'];
+        const midSounds = ['i', 'e', 'a', 'o', 'u', 'ai', 'ei', 'ou', 'ea', 'oa'];
+        const endSounds = ['pe', 'ma', 'go', 'va', 'na', 'ra', 'ta', 'la', 'da', 'ka', 'ba', 'ca', 'pa', 'sa', 'za'];
+
+        function generateNames() {
+            const idea = document.getElementById('idea').value.trim();
+            
+            if (!idea) {
+                alert('Please describe your product or idea first!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+
+            // Simulate generation time
+            setTimeout(() => {
+                const names = generateNamesList(idea);
+                
+                // Display results
+                displayNames(names);
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+            }, 1000);
+        }
+
+        function regenerateNames() {
+            const idea = document.getElementById('idea').value.trim();
+            
+            if (!idea) {
+                alert('Please describe your product or idea first!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('namesList').innerHTML = '';
+
+            // Simulate generation time
+            setTimeout(() => {
+                const names = generateNamesList(idea);
+                
+                // Display results
+                displayNames(names);
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+            }, 1000);
+        }
+
+        function generateNamesList(idea) {
+            const names = new Set(); // Use Set to avoid duplicates
+            const ideaWords = idea.toLowerCase().split(' ').filter(word => word.length > 2);
+            
+            // Analyze idea for context-appropriate word banks
+            const allWordBanks = [...techWords, ...natureWords, ...abstractWords, ...creativeWords, ...actionWords, ...qualityWords];
+            
+            // Strategy 1: Abstract single word (like Stripe, Figma)
+            const abstractName = getRandomFromArray(abstractWords);
+            names.add(capitalizeFirst(abstractName));
+            
+            // Strategy 2: Word hybridization (blend two words)
+            const word1 = getRandomFromArray(allWordBanks);
+            const word2 = getRandomFromArray(allWordBanks);
+            if (word1 !== word2) {
+                const hybrid = hybridizeWords(word1, word2);
+                names.add(capitalizeFirst(hybrid));
+            }
+            
+            // Strategy 3: Phonetic mashup (create completely new word)
+            const phoneticName = createPhoneticName();
+            names.add(phoneticName);
+            
+            // Strategy 4: Nature + Tech blend (unexpected combinations)
+            const natureWord = getRandomFromArray(natureWords);
+            const techWord = getRandomFromArray(techWords);
+            const blend = Math.random() > 0.5 ? 
+                capitalizeFirst(natureWord) + capitalizeFirst(techWord.slice(0, 4)) :
+                capitalizeFirst(techWord.slice(0, 4)) + capitalizeFirst(natureWord);
+            names.add(blend);
+            
+            // Strategy 5: Context-aware name (based on user input)
+            if (ideaWords.length > 0) {
+                const contextWord = ideaWords[Math.floor(Math.random() * ideaWords.length)];
+                const pairedWord = getRandomFromArray(allWordBanks);
+                const contextName = createContextName(contextWord, pairedWord);
+                names.add(contextName);
+            }
+            
+            // Strategy 6: Short and punchy (4-6 letters)
+            const shortName = createShortName();
+            names.add(shortName);
+            
+            // Convert Set to Array and return exactly 5 names
+            return Array.from(names).slice(0, 5);
+        }
+        
+        // Helper functions for name generation
+        function getRandomFromArray(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        function hybridizeWords(word1, word2) {
+            const cut1 = Math.floor(word1.length * (0.4 + Math.random() * 0.3));
+            const cut2 = Math.floor(word2.length * (0.3 + Math.random() * 0.4));
+            return word1.slice(0, cut1) + word2.slice(cut2);
+        }
+        
+        function createPhoneticName() {
+            const start = getRandomFromArray(startSounds);
+            const mid = getRandomFromArray(midSounds);
+            const end = getRandomFromArray(endSounds);
+            const name = start + mid + end;
+            return capitalizeFirst(name);
+        }
+        
+        function createContextName(contextWord, pairedWord) {
+            const strategies = [
+                () => capitalizeFirst(contextWord.slice(0, 4)) + capitalizeFirst(pairedWord),
+                () => capitalizeFirst(pairedWord) + capitalizeFirst(contextWord.slice(-3)),
+                () => {
+                    const shortened = contextWord.slice(0, 3) + pairedWord.slice(-3);
+                    return capitalizeFirst(shortened);
+                }
+            ];
+            return strategies[Math.floor(Math.random() * strategies.length)]();
+        }
+        
+        function createShortName() {
+            const consonants = 'bcdfghjklmnprstvwxyz';
+            const vowels = 'aeiou';
+            let name = '';
+            
+            // Start with consonant or vowel
+            name += Math.random() > 0.7 ? getRandomFromArray(vowels) : getRandomFromArray(consonants);
+            
+            // Build the rest
+            for (let i = 1; i < 4 + Math.floor(Math.random() * 3); i++) {
+                name += (i % 2 === 0) ? getRandomFromArray(consonants) : getRandomFromArray(vowels);
+            }
+            
+            return capitalizeFirst(name);
+        }
+
+        function displayNames(names) {
+            const namesList = document.getElementById('namesList');
+            namesList.innerHTML = '';
+            
+            names.forEach((name, index) => {
+                const nameItem = document.createElement('div');
+                nameItem.className = 'name-item';
+                nameItem.textContent = name;
+                nameItem.onclick = () => {
+                    navigator.clipboard.writeText(name);
+                    alert(`"${name}" copied to clipboard!`);
+                };
+                
+                // Add slight delay for animation effect
+                setTimeout(() => {
+                    namesList.appendChild(nameItem);
+                }, index * 100);
+            });
+            
+            document.getElementById('results').classList.add('show');
+        }
+
+        // Allow Enter key to generate names
+        document.getElementById('idea').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateNames();
+            }
+        });
+    </script>
+</body>
+</html>
